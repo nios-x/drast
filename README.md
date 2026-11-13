@@ -1,8 +1,16 @@
 # DrastDB
 
-**DrastDB is a small database server written in Rust.** You send it SQL-like queries over HTTP and it stores your data in plain-text files on disk. It also has a built-in in-memory key/value store.
+**DrastDB is a small database server written in Rust.** You send it SQL-like queries over HTTP and it stores your data in plain-text files on disk. It also has a built-in in-memory key/value store, and a web playground for running queries in your browser.
 
 It is built with [axum](https://github.com/tokio-rs/axum) and [tokio](https://tokio.rs), and is meant for learning and small projects. It is not a production database.
+
+Try it with one command, then open **http://127.0.0.1:3495/playground/**:
+
+```bash
+docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles soumya7708/drast
+```
+
+Or send it a query from the terminal:
 
 ```bash
 curl -X POST http://127.0.0.1:3495/query \
@@ -120,7 +128,7 @@ API Server is Running...
 
 ### Option 3: Build the Docker image yourself
 
-Use this if you have changed the code and want to run your own version in Docker:
+Use this if you have changed the code and want to run your own version in Docker. The build compiles both the server and the playground, so you don't need Rust or Node.js installed:
 
 ```bash
 git clone https://github.com/nios-x/drast.git
@@ -330,6 +338,7 @@ drast/
 | [docs/http-api.md](docs/http-api.md) | Endpoints, request and response formats, status codes, client code in several languages |
 | [docs/architecture.md](docs/architecture.md) | How a request flows through the code, the storage format, concurrency, and design notes |
 | [docs/deployment.md](docs/deployment.md) | Running locally and in Docker, Docker Compose, backups, and troubleshooting |
+| [frontend/README.md](frontend/README.md) | Using the web playground, keyboard shortcuts, development mode, and hosting it elsewhere |
 
 ---
 
@@ -343,7 +352,7 @@ DrastDB is deliberately simple. Before you rely on it, know that:
 - **Concurrent writes to the same table can lose updates.** Each write reads the whole file, changes it and writes it back without a lock.
 - **Every table query reads the whole file.** Performance drops as tables grow.
 - **The key/value store is not saved.** It is lost on restart.
-- **There is no authentication.** Anyone who can reach the port can read and change data. Browsers can only call the API from `localhost` pages unless you allow more origins with `DRAST_CORS_ORIGINS`.
+- **There is no authentication.** Anyone who can reach the port can read and change data, through the API or the playground at `/playground/`. In a browser, only the playground and pages on `localhost` can call the API, unless you allow more origins with `DRAST_CORS_ORIGINS`.
 
 [docs/architecture.md](docs/architecture.md#limitations-and-ideas-for-improvement) lists ideas for removing these limits.
 
@@ -357,6 +366,16 @@ cargo run                # build and start the server
 cargo build --release    # optimized build → target/release/drast
 cargo fmt                # format the code
 cargo clippy             # lint
+docker build -t drast .  # build the Docker image (server + playground)
+```
+
+For the playground, in `frontend/`:
+
+```bash
+npm install              # install dependencies
+npm run dev              # dev server with hot reload on http://localhost:5173
+npm run build            # build to frontend/dist, served by the server at /playground/
+npm run lint             # lint with oxlint
 ```
 
 ### Dependencies
