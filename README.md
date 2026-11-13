@@ -1,44 +1,62 @@
-<h1>
+<h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/logo/drastdb-logo-white.svg">
     <img alt="DrastDB" src="assets/logo/drastdb-logo-black.svg" height="48">
   </picture>
 </h1>
 
-**DrastDB is a small database server written in Rust.** You send it SQL-like queries over HTTP and it stores your data in plain-text files on disk. It also has a built-in in-memory key/value store, and a web playground for running queries in your browser.
+<p align="center">
+  <strong>A lightweight, file-backed database server written in Rust.</strong><br>
+  SQL-like queries over HTTP · Human-readable storage · Built-in web playground
+</p>
 
-It is built with [axum](https://github.com/tokio-rs/axum) and [tokio](https://tokio.rs), and is meant for learning and small projects. It is not a production database.
+<p align="center">
+  <a href="https://www.rust-lang.org"><img alt="Rust 1.85+" src="https://img.shields.io/badge/rust-1.85%2B-orange?logo=rust"></a>
+  <a href="https://hub.docker.com/r/soumya7708/drast"><img alt="Docker Hub" src="https://img.shields.io/badge/docker-soumya7708%2Fdrast-2496ED?logo=docker&logoColor=white"></a>
+  <a href="https://github.com/tokio-rs/axum"><img alt="Built with axum" src="https://img.shields.io/badge/built%20with-axum%20%2B%20tokio-blue"></a>
+</p>
 
-Try it with one command, then open **http://127.0.0.1:3495/playground/**:
+---
+
+## Overview
+
+**DrastDB** is a compact database server implemented in Rust on top of [axum](https://github.com/tokio-rs/axum) and [tokio](https://tokio.rs). Clients submit SQL-like queries through a JSON HTTP API, and the server persists each table as a plain-text file on disk. DrastDB also provides an in-memory key/value store and a browser-based playground for interactive use.
+
+DrastDB is designed for **learning, prototyping, and small-scale projects**. It is not intended for production workloads; see [Limitations](#limitations) before adopting it.
+
+### At a glance
+
+Start the server with a single command:
 
 ```bash
 docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles soumya7708/drast
 ```
 
-Or send it a query from the terminal:
+Then open **http://127.0.0.1:3495/playground/**, or issue a query from the terminal:
 
 ```bash
 curl -X POST http://127.0.0.1:3495/query \
   -H "Content-Type: application/json" \
   -d '{"query": "SELECT name, age FROM users WHERE id = 2"}'
 ```
+
 ```json
 {"response":"name\tage\nRahul\t22\n(1 row(s))"}
 ```
 
 ---
 
-## Table of contents
+## Table of Contents
 
 - [Features](#features)
-- [Quick start](#quick-start)
-- [Your first queries](#your-first-queries)
-- [Web playground](#web-playground)
-- [Command cheat sheet](#command-cheat-sheet)
-- [HTTP API at a glance](#http-api-at-a-glance)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Web Playground](#web-playground)
+- [Query Reference](#query-reference)
+- [HTTP API](#http-api)
 - [Configuration](#configuration)
-- [How data is stored](#how-data-is-stored)
-- [Project structure](#project-structure)
+- [Storage Format](#storage-format)
+- [Project Structure](#project-structure)
 - [Documentation](#documentation)
 - [Limitations](#limitations)
 - [Development](#development)
@@ -47,64 +65,67 @@ curl -X POST http://127.0.0.1:3495/query \
 
 ## Features
 
-- **SQL-like tables**: `CREATE TABLE`, `DROP TABLE`, `SHOW TABLES`, `INSERT`, `SELECT`, `UPDATE` and `DELETE FROM`, with an optional `WHERE col = value` filter.
-- **Web playground**: a browser UI for writing queries, browsing tables, and checking history, served by the server itself at `/playground/`.
-- **Key/value store**: `SET`, `GET` and `DELETE` keep values in memory. It is fast, but the data is lost when the server restarts.
-- **HTTP API**: a single `POST /query` endpoint that takes and returns JSON.
-- **Human-readable storage**: each table is one tab-separated text file in `./dbfiles/`.
-- **Clear error messages**: invalid queries return `400 Bad Request` with an explanation such as `Unknown column 'email'.`
-- **Docker support**: a prebuilt image on Docker Hub (`soumya7708/drast`), plus a multi-stage `Dockerfile` that produces a small image running as a non-root user.
+| Feature | Description |
+|---|---|
+| **SQL-like tables** | `CREATE TABLE`, `DROP TABLE`, `SHOW TABLES`, `INSERT`, `SELECT`, `UPDATE`, and `DELETE FROM`, with an optional `WHERE column = value` filter. |
+| **Web playground** | A browser interface for writing queries, browsing tables, and reviewing history, served directly by the server at `/playground/`. |
+| **Key/value store** | `SET`, `GET`, and `DELETE` operations backed by an in-memory store. Fast, but non-persistent. |
+| **JSON HTTP API** | A single `POST /query` endpoint that accepts and returns JSON. |
+| **Human-readable storage** | Each table is stored as a tab-separated UTF-8 text file in `./dbfiles/`. |
+| **Descriptive errors** | Invalid queries return `400 Bad Request` with a clear message, e.g. `Unknown column 'email'.` |
+| **Container-ready** | A prebuilt image on Docker Hub (`soumya7708/drast`) and a multi-stage `Dockerfile` producing a minimal image that runs as a non-root user. |
 
 ---
 
-## Quick start
+## Getting Started
 
-### Option 1: Run the Docker image (easiest)
+DrastDB can be run in three ways. The prebuilt Docker image is the recommended option for most users.
 
-You only need [Docker](https://docs.docker.com/get-docker/). There is nothing to clone or build. One command pulls the prebuilt image [`soumya7708/drast`](https://hub.docker.com/r/soumya7708/drast) from Docker Hub and starts the server:
+### Option 1 — Prebuilt Docker image (recommended)
+
+**Prerequisite:** [Docker](https://docs.docker.com/get-docker/). No cloning or compilation is required.
 
 ```bash
 docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles soumya7708/drast
 ```
 
-The command works the same in bash, PowerShell and Command Prompt. Here is what each part does:
+This command is identical in bash, PowerShell, and Command Prompt.
 
-| Part | Meaning |
+| Argument | Purpose |
 |---|---|
-| `-d` | Run in the background. |
-| `--name drast` | Name the container `drast` so you can stop and start it easily. |
-| `-p 3495:3495` | Make the server reachable at `http://127.0.0.1:3495` on your machine. To use another port, change the first number, for example `-p 8080:3495`. |
-| `-v drast-data:/app/dbfiles` | Save your tables in a Docker volume called `drast-data`, so they are kept when the container is stopped, removed or updated. |
+| `-d` | Runs the container in detached (background) mode. |
+| `--name drast` | Assigns the container the name `drast` for easier management. |
+| `-p 3495:3495` | Exposes the server at `http://127.0.0.1:3495`. To use a different host port, change the first value (e.g. `-p 8080:3495`). |
+| `-v drast-data:/app/dbfiles` | Persists table data in the named volume `drast-data`, so data survives container stops, removals, and upgrades. |
 | `soumya7708/drast` | The image to run. |
 
-Check that it is running:
+Verify that the server is running:
 
 ```bash
 curl http://127.0.0.1:3495/
 ```
+
 ```
 DrastDB is a Simple Mini DB made in Rust.
 API Server is Running...
 ```
 
-Open **http://127.0.0.1:3495/playground/** in your browser to use the [web playground](#web-playground), or jump to [Your first queries](#your-first-queries) to use curl.
-
-Useful commands:
+**Container management:**
 
 ```bash
-docker logs drast                 # show the server output
-docker stop drast                 # stop the server
-docker start drast                # start it again (your tables are still there)
+docker logs drast     # View server output
+docker stop drast     # Stop the server
+docker start drast    # Restart the server (existing tables are retained)
 
-# Update to the latest image (your tables are kept in the drast-data volume)
+# Upgrade to the latest image (data in the drast-data volume is preserved)
 docker pull soumya7708/drast
 docker rm -f drast
 docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles soumya7708/drast
 ```
 
-### Option 2: Run with Cargo
+### Option 2 — Build from source with Cargo
 
-You need **Rust 1.85 or newer**, because the project uses the 2024 edition. It has been tested with Rust 1.96.
+**Prerequisite:** Rust **1.85 or later** (required for the 2024 edition). Tested with Rust 1.96.
 
 ```bash
 git clone https://github.com/nios-x/drast.git
@@ -112,28 +133,18 @@ cd drast
 cargo run
 ```
 
-You should see:
+Expected output:
 
 ```
 DrastDB is running...
 Playground: not built (frontend/dist has no index.html), see /playground/
 ```
 
-The second line says whether the [web playground](#web-playground) is available. To build it, see that section.
+The second line reports whether the [web playground](#web-playground) is available; refer to that section to build it. The server listens on **http://127.0.0.1:3495** by default.
 
-The server is now listening on **http://127.0.0.1:3495**. To check it:
+### Option 3 — Build a custom Docker image
 
-```bash
-curl http://127.0.0.1:3495/
-```
-```
-DrastDB is a Simple Mini DB made in Rust.
-API Server is Running...
-```
-
-### Option 3: Build the Docker image yourself
-
-Use this if you have changed the code and want to run your own version in Docker. The build compiles both the server and the playground, so you don't need Rust or Node.js installed:
+Use this option to run a modified version of DrastDB in Docker. The multi-stage build compiles both the server and the playground, so neither Rust nor Node.js needs to be installed locally.
 
 ```bash
 git clone https://github.com/nios-x/drast.git
@@ -142,38 +153,38 @@ docker build -t drast .
 docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles drast
 ```
 
-The `-v drast-data:/app/dbfiles` part stores your tables in a named Docker volume, so they survive when the container is removed or recreated. See [docs/deployment.md](docs/deployment.md) for more.
+See [docs/deployment.md](docs/deployment.md) for Docker Compose, backups, and troubleshooting.
 
 ---
 
-## Your first queries
+## Usage
 
-Every query is sent as JSON to `POST /query`:
+All queries are submitted to `POST /query` as a JSON object:
 
 ```json
-{ "query": "<your query here>" }
+{ "query": "<query>" }
 ```
 
-### Using curl (Linux, macOS, Git Bash)
+### curl (Linux, macOS, Git Bash)
 
 ```bash
 # Create a table
 curl -X POST http://127.0.0.1:3495/query -H "Content-Type: application/json" \
   -d '{"query": "CREATE TABLE users (id, name, age)"}'
 
-# Insert rows (inside JSON, write quotes as \")
+# Insert rows (escape double quotes inside JSON as \")
 curl -X POST http://127.0.0.1:3495/query -H "Content-Type: application/json" \
   -d '{"query": "INSERT INTO users VALUES (1, \"Soumya Jaiswal\", 20)"}'
 
 curl -X POST http://127.0.0.1:3495/query -H "Content-Type: application/json" \
   -d '{"query": "INSERT INTO users VALUES (2, Rahul, 22)"}'
 
-# Read them back
+# Query the table
 curl -X POST http://127.0.0.1:3495/query -H "Content-Type: application/json" \
   -d '{"query": "SELECT * FROM users"}'
 ```
 
-### Using PowerShell (Windows)
+### PowerShell (Windows)
 
 ```powershell
 function drast($q) {
@@ -196,69 +207,84 @@ id      name            age
 
 ---
 
-## Web playground
+## Web Playground
 
-**DrastDB Playground** is a black-themed browser UI for the database. Its code is in [`frontend/`](frontend/), and the server serves it at **`/playground/`**, for example **http://127.0.0.1:3495/playground/**. It talks to the server it was loaded from, so there is nothing to configure.
+**DrastDB Playground** is a dark-themed browser interface for interacting with the database. Its source resides in [`frontend/`](frontend/), and the server hosts it at **`/playground/`** (e.g. http://127.0.0.1:3495/playground/). The playground communicates with the server that served it, so no configuration is required.
 
-- **Docker image:** the playground is already included. Open `/playground/` after `docker run`.
-- **`cargo run`:** build the playground once with [Node.js](https://nodejs.org) 20.19 or newer, then start the server from the repository root:
+| Environment | Setup |
+|---|---|
+| **Docker image** | Included by default. Open `/playground/` after starting the container. |
+| **`cargo run`** | Build the playground once using [Node.js](https://nodejs.org) 20.19 or later (see below), then start the server from the repository root. |
+| **Playground development** | Run `npm run dev` in `frontend/` and open http://localhost:5173 for hot module reloading. |
 
-  ```bash
-  cd frontend
-  npm install
-  npm run build
-  cd ..
-  cargo run
-  ```
+Building the playground for use with `cargo run`:
 
-  The server reads the built files from `frontend/dist`. Set `DRAST_PLAYGROUND_DIR` to use another folder.
-- **Working on the playground itself:** run `npm run dev` in `frontend/` and open **http://localhost:5173** for hot reload.
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+cargo run
+```
 
-Each line in the editor is one query: press `Ctrl+Enter` (`⌘+Enter` on macOS) to run the line under the cursor, or `Ctrl+Shift+Enter` to run every line. The sidebar lists your tables, has a form for the key/value store, and keeps a history of everything you've run. See [frontend/README.md](frontend/README.md) for details.
+The server serves the compiled assets from `frontend/dist`. Set `DRAST_PLAYGROUND_DIR` to use a different directory.
+
+**Editor shortcuts:** each line in the editor is treated as a single query.
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Enter` (`⌘+Enter` on macOS) | Run the query on the current line |
+| `Ctrl+Shift+Enter` | Run all lines |
+
+The sidebar lists existing tables, provides a form for the key/value store, and maintains a history of executed queries. See [frontend/README.md](frontend/README.md) for further details.
 
 ---
 
-## Command cheat sheet
+## Query Reference
 
-Keywords are case-insensitive: `select`, `SELECT` and `Select` all work. Do **not** end queries with a semicolon.
+Keywords are case-insensitive (`select`, `SELECT`, and `Select` are equivalent). Queries **must not** end with a semicolon.
 
-### Tables (saved to disk)
+### Tables (persisted to disk)
 
-| Command | Example | Success response |
+| Operation | Example | Success response |
 |---|---|---|
 | Create a table | `CREATE TABLE users (id, name, age)` | `Table 'users' created.` |
-| Delete a table | `DROP TABLE users` | `Table 'users' dropped.` |
-| List tables | `SHOW TABLES` | each table with its columns and row count |
+| Drop a table | `DROP TABLE users` | `Table 'users' dropped.` |
+| List tables | `SHOW TABLES` | Each table with its columns and row count |
 | Insert a full row | `INSERT INTO users VALUES (1, 'Soumya', 20)` | `1 row inserted into 'users'.` |
-| Insert some columns | `INSERT INTO users (id, name) VALUES (3, 'Amit')` | `1 row inserted into 'users'.` |
-| Select all columns | `SELECT * FROM users` | header, rows, `(N row(s))` |
-| Select some columns | `SELECT name, age FROM users WHERE id = 2` | header, rows, `(N row(s))` |
+| Insert specific columns | `INSERT INTO users (id, name) VALUES (3, 'Amit')` | `1 row inserted into 'users'.` |
+| Select all columns | `SELECT * FROM users` | Header, rows, `(N row(s))` |
+| Select specific columns | `SELECT name, age FROM users WHERE id = 2` | Header, rows, `(N row(s))` |
 | Update rows | `UPDATE users SET name = 'Rahul Kumar', age = 21 WHERE id = 2` | `1 row(s) updated in 'users'.` |
 | Delete rows | `DELETE FROM users WHERE id = 3` | `1 row(s) deleted from 'users'.` |
 
-- `WHERE` is optional and supports exactly **one** `column = value` condition. Values must match exactly, including case.
-- `UPDATE` and `DELETE FROM` without `WHERE` affect **every row**.
-- Values containing spaces must be quoted with `'single'` or `"double"` quotes.
+**Rules:**
+
+- `WHERE` is optional and supports exactly **one** `column = value` condition. Matching is exact and case-sensitive.
+- `UPDATE` and `DELETE FROM` without a `WHERE` clause affect **all rows**.
+- Values containing spaces must be enclosed in `'single'` or `"double"` quotes.
 
 ### Key/value store (in memory)
 
-| Command | Example | Success response |
+| Operation | Example | Success response |
 |---|---|---|
 | Set a key | `SET greeting hello world` | `OK` |
 | Get a key | `GET greeting` | `hello world` |
 | Delete a key | `DELETE greeting` | `DELETED` |
 
-The full syntax, rules and every error message are in **[docs/query-language.md](docs/query-language.md)**.
+The complete grammar, naming rules, and error reference are documented in **[docs/query-language.md](docs/query-language.md)**.
 
 ---
 
-## HTTP API at a glance
+## HTTP API
 
-| Method | Path | Body | Response |
+| Method | Path | Request body | Response |
 |---|---|---|---|
-| `GET` | `/` | none | `200`, plain-text banner |
-| `POST` | `/query` | `{"query": "..."}` (JSON) | `200` `{"response": "..."}` on success, `400` plain-text error on failure |
-| `GET` | `/playground/` | none | The [web playground](#web-playground) (`/playground` redirects here) |
+| `GET` | `/` | — | `200 OK`, plain-text banner |
+| `POST` | `/query` | `{"query": "..."}` (JSON) | `200 OK` with `{"response": "..."}` on success; `400 Bad Request` with a plain-text error on failure |
+| `GET` | `/playground/` | — | The [web playground](#web-playground) (`/playground` redirects here) |
+
+Example error response:
 
 ```
 POST /query  {"query": "SELECT * FROM missing"}
@@ -266,32 +292,37 @@ POST /query  {"query": "SELECT * FROM missing"}
 Table 'missing' does not exist.
 ```
 
-Status codes, response formats and client examples in curl, PowerShell, JavaScript and Python are in **[docs/http-api.md](docs/http-api.md)**.
+Status codes, response formats, and client examples in curl, PowerShell, JavaScript, and Python are documented in **[docs/http-api.md](docs/http-api.md)**.
 
 ---
 
 ## Configuration
 
-| Environment variable | Default | Description |
+DrastDB is configured through environment variables.
+
+| Variable | Default | Description |
 |---|---|---|
-| `DRAST_ADDR` | `127.0.0.1:3495` | The address and port the server listens on. Use `0.0.0.0:<port>` to accept connections from other machines or from outside a container. |
-| `DRAST_CORS_ORIGINS` | *(none)* | Extra web origins allowed to call the API from a browser, comma-separated, e.g. `https://my-app.vercel.app`. Pages on `localhost` / `127.0.0.1` are always allowed. `*` allows every origin. |
-| `DRAST_PLAYGROUND_DIR` | `frontend/dist` (`/app/playground` in Docker) | The folder holding the built [web playground](#web-playground), served at `/playground/`. A relative path is relative to the directory you start the server from. |
+| `DRAST_ADDR` | `127.0.0.1:3495` | Address and port the server binds to. Use `0.0.0.0:<port>` to accept connections from other hosts or from outside a container. |
+| `DRAST_CORS_ORIGINS` | *(none)* | Additional comma-separated origins permitted to call the API from a browser (e.g. `https://my-app.vercel.app`). `localhost` and `127.0.0.1` are always permitted; `*` permits all origins. |
+| `DRAST_PLAYGROUND_DIR` | `frontend/dist` (`/app/playground` in Docker) | Directory containing the built [web playground](#web-playground). Relative paths are resolved against the server's working directory. |
+
+**Examples:**
 
 ```bash
-DRAST_ADDR=0.0.0.0:8080 cargo run        # bash
-```
-```powershell
-$env:DRAST_ADDR = "0.0.0.0:8080"; cargo run   # PowerShell
+DRAST_ADDR=0.0.0.0:8080 cargo run                # bash
 ```
 
-Tables are saved in `./dbfiles/`, **relative to the directory you start the server from**.
+```powershell
+$env:DRAST_ADDR = "0.0.0.0:8080"; cargo run       # PowerShell
+```
+
+> **Note:** Table files are written to `./dbfiles/`, **relative to the directory from which the server is started**.
 
 ---
 
-## How data is stored
+## Storage Format
 
-Each table is a plain UTF-8 text file at `./dbfiles/<table>.db`. The first line holds the column names and each following line holds one row, with values separated by tabs:
+Each table is stored as a UTF-8 text file at `./dbfiles/<table>.db`. The first line contains the column names; each subsequent line represents one row, with values separated by tab characters:
 
 ```
 id	name	age
@@ -300,35 +331,35 @@ id	name	age
 3	Amit
 ```
 
-You can open these files in any text editor. Because tabs and newlines separate values, they are not allowed *inside* values.
+These files can be inspected with any text editor. Because tabs and newlines act as delimiters, they cannot appear *within* values.
 
-The key/value store is a `HashMap` held in memory. It is shared by all clients and is **cleared when the server stops**.
+The key/value store is an in-memory `HashMap` shared across all clients. Its contents are **discarded when the server stops**.
 
-More detail is in [docs/architecture.md](docs/architecture.md).
+For a detailed description of the internals, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
 drast/
 ├── Cargo.toml          # Package manifest (axum, tokio, serde, tower-http)
-├── Dockerfile          # Multi-stage Docker build (playground + server)
+├── Dockerfile          # Multi-stage build (playground + server)
 ├── .dockerignore
 ├── README.md
-├── assets/logo/        # Logo, icon and social preview image
+├── assets/logo/        # Logo, icon, and social preview image
 ├── docs/               # Detailed documentation
 │   ├── query-language.md
 │   ├── http-api.md
 │   ├── architecture.md
 │   └── deployment.md
-├── frontend/           # DrastDB Playground (React + Vite web UI)
+├── frontend/           # DrastDB Playground (React + Vite)
 └── src/
     ├── main.rs         # Entry point: reads DRAST_ADDR, builds the router, starts the server
     ├── executor.rs     # POST /query handler: parse → execute → JSON response
-    ├── parser.rs       # Tokenizer, query parser, and table storage (reads/writes dbfiles/)
+    ├── parser.rs       # Tokenizer, query parser, and table storage (dbfiles/ I/O)
     ├── engine.rs       # In-memory key/value store and response formatting
-    ├── cors.rs         # Which browser origins may call the API
+    ├── cors.rs         # Browser origin policy for the API
     ├── playground.rs   # Serves the built playground at /playground/
     ├── handlers.rs     # GET / handler
     └── helpers.rs      # Startup message
@@ -338,57 +369,61 @@ drast/
 
 ## Documentation
 
-| Document | What's inside |
+| Document | Contents |
 |---|---|
-| [docs/query-language.md](docs/query-language.md) | Full syntax for every command, value and naming rules, examples, and an error reference |
-| [docs/http-api.md](docs/http-api.md) | Endpoints, request and response formats, status codes, client code in several languages |
-| [docs/architecture.md](docs/architecture.md) | How a request flows through the code, the storage format, concurrency, and design notes |
-| [docs/deployment.md](docs/deployment.md) | Running locally and in Docker, Docker Compose, backups, and troubleshooting |
-| [frontend/README.md](frontend/README.md) | Using the web playground, keyboard shortcuts, development mode, and hosting it elsewhere |
+| [docs/query-language.md](docs/query-language.md) | Complete command syntax, value and naming rules, examples, and error reference |
+| [docs/http-api.md](docs/http-api.md) | Endpoints, request/response formats, status codes, and client examples in multiple languages |
+| [docs/architecture.md](docs/architecture.md) | Request lifecycle, storage format, concurrency model, and design notes |
+| [docs/deployment.md](docs/deployment.md) | Local and Docker deployment, Docker Compose, backups, and troubleshooting |
+| [frontend/README.md](frontend/README.md) | Playground usage, keyboard shortcuts, development mode, and alternative hosting |
 
 ---
 
 ## Limitations
 
-DrastDB is deliberately simple. Before you rely on it, know that:
+DrastDB is intentionally minimal. Please review the following constraints before relying on it:
 
-- **All values are strings.** There are no types, so `WHERE age = 020` does not match `20`.
-- **`WHERE` takes one equality condition.** There is no `AND`/`OR`, `<`, `>`, `!=` or `LIKE`.
-- **There is no `ORDER BY`, `LIMIT`, `JOIN`, index or transaction.**
-- **Concurrent writes to the same table can lose updates.** Each write reads the whole file, changes it and writes it back without a lock.
-- **Every table query reads the whole file.** Performance drops as tables grow.
-- **The key/value store is not saved.** It is lost on restart.
-- **There is no authentication.** Anyone who can reach the port can read and change data, through the API or the playground at `/playground/`. In a browser, only the playground and pages on `localhost` can call the API, unless you allow more origins with `DRAST_CORS_ORIGINS`.
+- **Untyped values.** All values are stored as strings; for example, `WHERE age = 020` does not match `20`.
+- **Single-condition filtering.** `WHERE` accepts one equality condition only. `AND`, `OR`, `<`, `>`, `!=`, and `LIKE` are not supported.
+- **No advanced query features.** `ORDER BY`, `LIMIT`, `JOIN`, indexes, and transactions are not supported.
+- **No write locking.** Concurrent writes to the same table may result in lost updates, as each write reads, modifies, and rewrites the entire file without locking.
+- **Full-file reads.** Every table query reads the entire file, so performance degrades as tables grow.
+- **Volatile key/value store.** Key/value data is not persisted and is lost on restart.
+- **No authentication.** Any client that can reach the port can read and modify data via the API or the playground. Browser access is restricted to the playground and `localhost` pages unless additional origins are permitted via `DRAST_CORS_ORIGINS`.
 
-[docs/architecture.md](docs/architecture.md#limitations-and-ideas-for-improvement) lists ideas for removing these limits.
+Potential approaches for addressing these limitations are outlined in [docs/architecture.md](docs/architecture.md#limitations-and-ideas-for-improvement).
 
 ---
 
 ## Development
 
+### Server
+
 ```bash
-cargo build              # debug build
-cargo run                # build and start the server
-cargo build --release    # optimized build → target/release/drast
-cargo fmt                # format the code
-cargo clippy             # lint
-docker build -t drast .  # build the Docker image (server + playground)
+cargo build              # Debug build
+cargo run                # Build and start the server
+cargo build --release    # Optimized build → target/release/drast
+cargo fmt                # Format source code
+cargo clippy             # Run the linter
+docker build -t drast .  # Build the Docker image (server + playground)
 ```
 
-For the playground, in `frontend/`:
+### Playground
+
+Run the following from `frontend/`:
 
 ```bash
-npm install              # install dependencies
-npm run dev              # dev server with hot reload on http://localhost:5173
-npm run build            # build to frontend/dist, served by the server at /playground/
-npm run lint             # lint with oxlint
+npm install              # Install dependencies
+npm run dev              # Development server with hot reload at http://localhost:5173
+npm run build            # Production build to frontend/dist (served at /playground/)
+npm run lint             # Lint with oxlint
 ```
 
 ### Dependencies
 
-| Crate | Purpose |
-|---|---|
-| `axum` 0.8 | HTTP routing and JSON extraction |
-| `tokio` 1 (full) | Async runtime, TCP listener, async file I/O |
-| `serde` 1 (derive) | JSON request/response (de)serialization |
-| `tower-http` 0.7 (cors, fs) | CORS headers for browser clients, and serving the playground's static files |
+| Crate | Version | Purpose |
+|---|---|---|
+| `axum` | 0.8 | HTTP routing and JSON extraction |
+| `tokio` | 1 (`full`) | Async runtime, TCP listener, and async file I/O |
+| `serde` | 1 (`derive`) | JSON request/response serialization |
+| `tower-http` | 0.7 (`cors`, `fs`) | CORS handling for browser clients and static file serving for the playground |
