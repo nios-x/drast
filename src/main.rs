@@ -4,6 +4,7 @@ mod handlers;
 mod parser;
 mod executor;
 mod engine;
+mod cors;
 
 const DEFAULT_ADDR: &str = "127.0.0.1:3495";
 
@@ -14,6 +15,7 @@ async fn main(){
     let app = Router::new()
     .route("/", get(handlers::root))
     .route("/query", post(executor::query))
+    .layer(cors::layer())
     .with_state(engine::Engine::new());
     let listner = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listner, app).await.unwrap();

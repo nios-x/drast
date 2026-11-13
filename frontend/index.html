@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Write, run and inspect DrastDB queries in the browser." />
+    <title>DrastDB Playground</title>
+  </head>
+  <body>
+    <!--
+      THESIS: A playground where every editor line is one DrastDB request; refuses the generic SQL-client grid of panes and modal dialogs.
+      OWN-WORLD: Pure black page, #0a0a0a panels on 1px #222 hairlines, 12px radii, white primary buttons, Geist + Geist Mono, green/red reserved for query state, pink/green/blue syntax.
+      STORY: The developer sees the database answer per line, browses real tables, recovers past queries, and never needs curl.
+      FIRST VIEWPORT: Top bar (logo, DrastDB / Playground, live connection pill). Left 320px sidebar tabs Tables · Key/value · History. Right: query editor with gutter status dots and Run (white, top-right), draggable divider, Output with result tables.
+      FORM: Brief-pinned (black, Vercel-style); no roll. Signature interaction: per-line gutter status dots after each run.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

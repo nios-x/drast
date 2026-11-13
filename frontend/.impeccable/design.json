@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T16:30:00Z",
+  "title": "Design System: DrastDB Playground",
+  "extensions": {
+    "colorMeta": {
+      "paper-white": { "role": "primary", "displayName": "Paper White", "canonical": "#ededed", "tonalRamp": ["#1a1a1a", "#2e2e2e", "#454545", "#6b6b6b", "#8a8a8a", "#a1a1a1", "#cccccc", "#ededed"] },
+      "ink-black": { "role": "neutral", "displayName": "Ink Black", "canonical": "#000000", "tonalRamp": ["#000000", "#0a0a0a", "#111111", "#1a1a1a", "#222222", "#2e2e2e", "#454545", "#8a8a8a"] },
+      "pass-green": { "role": "state", "displayName": "Pass Green", "canonical": "#4fca82", "tonalRamp": ["#0d2a1a", "#164a2d", "#1f6a40", "#2a8a55", "#3aab6b", "#4fca82", "#86dda9", "#c2efd3"] },
+      "fault-red": { "role": "state", "displayName": "Fault Red", "canonical": "#ff6166", "tonalRamp": ["#330c0e", "#5c1519", "#8a1f25", "#b82a31", "#e5414a", "#ff6166", "#ff9a9d", "#ffd0d1"] },
+      "signal-blue": { "role": "state", "displayName": "Signal Blue", "canonical": "#3291ff", "tonalRamp": ["#071a33", "#0c2e5c", "#12438a", "#1a5cb8", "#2476e5", "#3291ff", "#7ab8ff", "#c4e0ff"] },
+      "wait-amber": { "role": "state", "displayName": "Wait Amber", "canonical": "#f5a623", "tonalRamp": ["#2e1f06", "#523709", "#7a520d", "#a36d11", "#cc8916", "#f5a623", "#f8c46e", "#fce3b8"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Empty-state headings." },
+      "label": { "displayName": "Label", "purpose": "Panel titles and the product name." },
+      "body": { "displayName": "Body", "purpose": "Default interface text and buttons." },
+      "caption": { "displayName": "Caption", "purpose": "Summaries, timings, metadata." },
+      "code": { "displayName": "Code", "purpose": "Editor, results and anything the database reads or returns." }
+    },
+    "shadows": [
+      { "name": "floating", "value": "0 16px 40px -12px rgba(0,0,0,0.9), 0 4px 12px -6px rgba(0,0,0,0.7)", "purpose": "Menus, popovers and toasts only." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Menus, reveals, entries, gutter dots." },
+      { "name": "state-fast", "value": "150ms", "purpose": "Hover and color transitions." }
+    ],
+    "breakpoints": [
+      { "name": "stack", "value": "960px" },
+      { "name": "compact", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action in a region, such as Run.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 3l14 9-14 9V3z\"/></svg>Run<span class=\"ds-kbd-hint\">Ctrl ↵</span></button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 10px; border:1px solid transparent; border-radius:6px; background:#ededed; color:#0a0a0a; font:500 13px 'Geist Variable', system-ui, sans-serif; cursor:pointer; transition:background-color .15s; } .ds-btn-primary:hover { background:#cccccc; } .ds-btn-primary:focus-visible { outline:2px solid #3291ff; outline-offset:2px; } .ds-btn-primary:active { transform:translateY(.5px); } .ds-kbd-hint { margin-left:2px; font:11px 'Geist Mono Variable', ui-monospace, monospace; color:#555; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined action next to a primary, such as Run all or Examples.",
+      "html": "<button class=\"ds-btn-secondary\">Run all</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 10px; border:1px solid #2e2e2e; border-radius:6px; background:#000; color:#ededed; font:500 13px 'Geist Variable', system-ui, sans-serif; cursor:pointer; transition:background-color .15s, border-color .15s; } .ds-btn-secondary:hover { background:#1a1a1a; border-color:#454545; } .ds-btn-secondary:focus-visible { outline:2px solid #3291ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-emphasis inline action, such as Clear or Copy TSV.",
+      "html": "<button class=\"ds-btn-ghost\">Clear</button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; gap:5px; height:28px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:#a1a1a1; font:500 12.5px 'Geist Variable', system-ui, sans-serif; cursor:pointer; transition:background-color .15s, color .15s; } .ds-btn-ghost:hover { background:#1a1a1a; color:#ededed; } .ds-btn-ghost:focus-visible { outline:2px solid #3291ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field for keys, values and the server URL.",
+      "html": "<input class=\"ds-input\" placeholder=\"greeting\" />",
+      "css": ".ds-input { height:36px; padding:0 10px; border:1px solid #2e2e2e; border-radius:6px; background:#000; color:#ededed; font:13px 'Geist Mono Variable', ui-monospace, monospace; transition:border-color .15s; } .ds-input::placeholder { color:#8a8a8a; } .ds-input:hover { border-color:#454545; } .ds-input:focus-visible { outline:2px solid #3291ff; outline-offset:1px; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "nav",
+      "refersTo": "status-pill",
+      "description": "Live connection state in the top bar.",
+      "html": "<button class=\"ds-pill\"><span class=\"ds-dot\"></span><span class=\"ds-pill-label\">Connected</span><span class=\"ds-pill-host\">127.0.0.1:3495</span></button>",
+      "css": ".ds-pill { display:flex; align-items:center; gap:8px; height:32px; padding:0 12px; border:1px solid #2e2e2e; border-radius:999px; background:#000; color:#ededed; font:13px 'Geist Variable', system-ui, sans-serif; cursor:pointer; transition:background-color .15s, border-color .15s; } .ds-pill:hover { background:#111; border-color:#454545; } .ds-pill:focus-visible { outline:2px solid #3291ff; outline-offset:2px; } .ds-dot { width:8px; height:8px; border-radius:50%; background:#4fca82; } .ds-pill-label { font-weight:500; } .ds-pill-host { font:12px 'Geist Mono Variable', ui-monospace, monospace; color:#8a8a8a; }"
+    },
+    {
+      "name": "Sidebar Tab",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Text tab with a white underline when selected.",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab\" aria-selected=\"true\">Tables <span class=\"ds-count\">2</span></button><button class=\"ds-tab\">History</button></div>",
+      "css": ".ds-tabs { display:flex; gap:2px; border-bottom:1px solid #222; } .ds-tab { position:relative; display:inline-flex; align-items:center; gap:6px; height:40px; padding:0 10px; border:0; background:transparent; color:#a1a1a1; font:500 13.5px 'Geist Variable', system-ui, sans-serif; cursor:pointer; transition:color .15s; } .ds-tab:hover, .ds-tab[aria-selected='true'] { color:#ededed; } .ds-tab[aria-selected='true']::after { content:''; position:absolute; left:8px; right:8px; bottom:-1px; height:2px; border-radius:2px; background:#ededed; } .ds-tab:focus-visible { outline:2px solid #3291ff; outline-offset:2px; } .ds-count { display:inline-grid; place-items:center; min-width:20px; height:18px; padding:0 6px; border-radius:999px; background:#1a1a1a; color:#a1a1a1; font-size:11px; }"
+    },
+    {
+      "name": "Gutter Line",
+      "kind": "custom",
+      "refersTo": "editor-gutter",
+      "description": "Signature: per-line run status beside the line number.",
+      "html": "<div class=\"ds-gutter\"><div class=\"ds-gl\"><span class=\"ds-gd ok\"></span>20</div><div class=\"ds-gl active\"><span class=\"ds-gd err\"></span>21</div></div>",
+      "css": ".ds-gutter { width:60px; padding:12px 0; border-right:1px solid #222; background:#0a0a0a; font:12px 'Geist Mono Variable', ui-monospace, monospace; } .ds-gl { display:flex; align-items:center; justify-content:flex-end; gap:10px; height:22px; padding-right:12px; color:#8a8a8a; } .ds-gl.active { color:#ededed; } .ds-gd { width:7px; height:7px; border-radius:50%; } .ds-gd.ok { background:#4fca82; } .ds-gd.err { background:#ff6166; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Black Console",
+    "overview": "A developer's console in the black, hairline-thin idiom of modern deploy dashboards. The page is pure black; working surfaces are near-black panels separated by 1px lines, never by shadow or color. The interface stays silent so the database's answers are the brightest things on screen. Color is a signal, not decoration, and the one signature device is the editor gutter, where each line gets a status dot after it runs.",
+    "keyCharacteristics": [
+      "Pure black ground with near-black panels and 1px hairlines",
+      "White primary buttons with black text; everything else is outlined or ghost",
+      "Geist for the interface, Geist Mono for code, data and measurements",
+      "Green, red, amber and blue reserved for state",
+      "Flat at rest; only floating menus carry a shadow"
+    ],
+    "rules": [
+      { "name": "The State-Only Color Rule", "body": "Green, red, amber and blue mean query or connection state. Never use them for decoration, emphasis or branding.", "section": "colors" },
+      { "name": "The One White Button Rule", "body": "Each region has at most one Paper White button: its primary action (Run, Set, Reconnect).", "section": "colors" },
+      { "name": "The Mono Means Data Rule", "body": "Monospace is only for code, data and measurements (queries, cell values, timings, URLs, kbd hints), never for decoration.", "section": "typography" },
+      { "name": "The Hairline Rule", "body": "Separate regions with a 1px line in Hairline or Hairline Strong. Never use a resting shadow, a colored border or a thicker stripe.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the page ground Ink Black (#000) and panels Panel Black (#0a0a0a).",
+      "Do use Paper White fill only for the single primary action in a region.",
+      "Do show real database output verbatim: the exact error text, row counts and timings.",
+      "Do separate regions with 1px Hairline lines.",
+      "Do keep motion to state changes, at 150–250ms with cubic-bezier(0.16, 1, 0.3, 1), and respect reduced motion."
+    ],
+    "donts": [
+      "Don't use green, red, amber or blue for anything but state (The State-Only Color Rule).",
+      "Don't add resting shadows, glows or halos around status dots.",
+      "Don't use monospace for headings or labels that aren't code or data.",
+      "Don't put a grid or line-field texture behind content; the corner crosshair frame is the only ornament.",
+      "Don't add eyebrow labels above headings."
+    ]
+  }
+}

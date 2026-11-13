@@ -50,6 +50,15 @@ impl Engine {
                 out.push_str(&format!("\n({} row(s))", rows.len()));
                 Ok(out)
             }
+            // Same tab-separated shape as SELECT so clients can parse both alike.
+            Query::ShowTables { tables } => {
+                let mut out = String::from("table\tcolumns\trows");
+                for t in &tables {
+                    out.push_str(&format!("\n{}\t{}\t{}", t.name, t.columns.join(", "), t.rows));
+                }
+                out.push_str(&format!("\n({} row(s))", tables.len()));
+                Ok(out)
+            }
         }
     }
 }

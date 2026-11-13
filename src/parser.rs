@@ -34,6 +34,16 @@ pub enum Query {
         table: String,
         count: usize,
     },
+    ShowTables {
+        tables: Vec<TableInfo>,
+    },
+}
+
+#[derive(Debug)]
+pub struct TableInfo {
+    pub name: String,
+    pub columns: Vec<String>,
+    pub rows: usize,
 }
 
 
@@ -463,6 +473,46 @@ pub async fn parse(input: &str) -> Result<Query, String> {
             Ok(Query::DeleteRows { table: name, count })
         }
 
+        // SHOW TABLES
+        "SHOW" => {
+            if parts.len() != 2 || !parts[1].eq_ignore_ascii_case("TABLES") {
+                return Err("Usage: SHOW TABLES".to_string());
+            }
+
+            let mut tables = Vec::new();
+            let mut dir = match fs::read_dir("./dbfiles").await {
+                Ok(dir) => dir,
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    return Ok(Query::ShowTables { tables });
+                }
+                Err(e) => return Err(e.to_string()),
+            };
+
+            while let Some(entry) = dir.next_entry().await.map_err(|e| e.to_string())? {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("db") {
+                    continue;
+                }
+                let Some(name) = path.file_stem().and_then(|s| s.to_str()) else {
+                    continue;
+                };
+                if !is_valid_table_name(name) {
+                    continue;
+                }
+                // Skip unreadable or corrupted files instead of failing the whole listing.
+                if let Ok(table) = load_table(name).await {
+                    tables.push(TableInfo {
+                        name: name.to_string(),
+                        columns: table.columns,
+                        rows: table.rows.len(),
+                    });
+                }
+            }
+            tables.sort_by(|a, b| a.name.cmp(&b.name));
+
+            Ok(Query::ShowTables { tables })
+        }
+
         "SET" => {
             if parts.len() < 3 {
                 return Err("Usage: SET <key> <value>".to_string());
@@ -497,6 +547,7 @@ pub async fn parse(input: &str) -> Result<Query, String> {
         _ => Err("Not a Valid Input.\nTry:\n\
 CREATE TABLE <name> (col1, col2, ...)\n\
 DROP TABLE <name>\n\
+SHOW TABLES\n\
 INSERT INTO <name> VALUES (v1, v2, ...)\n\
 INSERT INTO <name> (col1, col2) VALUES (v1, v2)\n\
 SELECT * FROM <name> [WHERE col = value]\n\

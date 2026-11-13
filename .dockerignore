@@ -4,3 +4,4 @@ dbfiles
 .gitignore
 Dockerfile
 .dockerignore
+node_modules
