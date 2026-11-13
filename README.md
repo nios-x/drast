@@ -1,4 +1,9 @@
-# DrastDB
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/drastdb-logo-white.svg">
+    <img alt="DrastDB" src="assets/logo/drastdb-logo-black.svg" height="48">
+  </picture>
+</h1>
 
 **DrastDB is a small database server written in Rust.** You send it SQL-like queries over HTTP and it stores your data in plain-text files on disk. It also has a built-in in-memory key/value store, and a web playground for running queries in your browser.
 
@@ -311,6 +316,7 @@ drast/
 ├── Dockerfile          # Multi-stage Docker build (playground + server)
 ├── .dockerignore
 ├── README.md
+├── assets/logo/        # Logo, icon and social preview image
 ├── docs/               # Detailed documentation
 │   ├── query-language.md
 │   ├── http-api.md

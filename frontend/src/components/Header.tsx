@@ -3,12 +3,16 @@ import { useCallback, useRef, useState, type FormEvent } from 'react'
 import { normalizeUrl } from '../lib/api'
 import { useDismiss } from '../lib/useDismiss'
 
+/** The DrastDB mark: a "D" sliced into rows. Source: assets/logo/drastdb-mark-*.svg */
 export function Logo({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M7 3.5h14l-2.6 4.5H4.4z" />
-      <path d="M7 9.75h14l-2.6 4.5H4.4z" opacity="0.72" />
-      <path d="M7 16h14l-2.6 4.5H4.4z" opacity="0.44" />
+      <path d="M4.69 3.75H11.62A8.25 8.25 0 0 1 17.99 6.75H4.69A0.56 0.56 0 0 1 4.12 6.19V4.31A0.56 0.56 0 0 1 4.69 3.75Z" />
+      <path d="M4.69 8.25H7.88V11.25H4.69A0.56 0.56 0 0 1 4.12 10.69V8.81A0.56 0.56 0 0 1 4.69 8.25Z" />
+      <path d="M14.11 8.25H18.97A8.25 8.25 0 0 1 19.84 11.25H16.06A4.5 4.5 0 0 0 14.11 8.25Z" />
+      <path d="M4.69 12.75H7.88V15.75H4.69A0.56 0.56 0 0 1 4.12 15.19V13.31A0.56 0.56 0 0 1 4.69 12.75Z" />
+      <path d="M16.06 12.75H19.84A8.25 8.25 0 0 1 18.97 15.75H14.11A4.5 4.5 0 0 0 16.06 12.75Z" />
+      <path d="M4.69 17.25H17.99A8.25 8.25 0 0 1 11.62 20.25H4.69A0.56 0.56 0 0 1 4.12 19.69V17.81A0.56 0.56 0 0 1 4.69 17.25Z" />
     </svg>
   )
 }
