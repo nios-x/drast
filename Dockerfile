@@ -17,7 +17,7 @@ FROM debian:bookworm-slim
 WORKDIR /app
 
 # Run as a non-root user; tables are stored in /app/dbfiles.
-RUN useradd --system --uid 10001 drast \
+RUN useradd --system --no-create-home drast \
     && mkdir -p /app/dbfiles \
     && chown drast:drast /app/dbfiles
 
