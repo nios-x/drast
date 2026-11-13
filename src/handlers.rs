@@ -2,7 +2,7 @@ use axum::{Json, http::{HeaderMap, StatusCode}};
 use serde::{Deserialize, Serialize};
 
 
-pub async fn root(headers: HeaderMap) -> String {
+pub async fn root(_headers: HeaderMap) -> String {
     "DrastDB is a Simple Mini DB made in Rust.\nAPI Server is Running...".to_string()
 }
 

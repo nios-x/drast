@@ -6,11 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::engine::Engine;
-use crate::memoryparser;
-
-pub async fn root() -> &'static str {
-    "DrastDB is a Simple Mini DB made in Rust.\nAPI Server is Running..."
-}
+use crate::parser;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryRequest {
@@ -27,7 +23,8 @@ pub async fn query(
     Json(body): Json<QueryRequest>,
 ) -> Result<Json<QueryResponse>, (StatusCode, String)> {
 
-    let query = memoryparser::parse(&body.query)
+    let query = parser::parse(&body.query)
+        .await
         .map_err(|error| (StatusCode::BAD_REQUEST, error))?;
 
     match engine.execute(query) {

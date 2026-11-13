@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use crate::memoryparser::MemoryQuery; // change `parser` to whatever file holds MemoryQuery
+use crate::parser::Query;
 
 #[derive(Clone, Default)]
 pub struct Engine {
@@ -13,23 +13,43 @@ impl Engine {
         Self::default()
     }
 
-    pub fn execute(&self, query: MemoryQuery) -> Result<String, String> {
+    pub fn execute(&self, query: Query) -> Result<String, String> {
         match query {
-            MemoryQuery::Set { key, value } => {
+            // In-memory key/value commands
+            Query::Set { key, value } => {
                 self.store.write().unwrap().insert(key, value);
                 Ok("OK".into())
             }
-            MemoryQuery::Get { key } => self
+            Query::Get { key } => self
                 .store
                 .read()
                 .unwrap()
                 .get(&key)
                 .cloned()
                 .ok_or_else(|| format!("Key '{key}' not found")),
-            MemoryQuery::Remove { key } => match self.store.write().unwrap().remove(&key) {
+            Query::Remove { key } => match self.store.write().unwrap().remove(&key) {
                 Some(_) => Ok("DELETED".into()),
                 None => Err(format!("Key '{key}' not found")),
             },
+
+            // Table commands: the parser has already done the disk work,
+            // so here we only format the result.
+            Query::CreateTable { key } => Ok(format!("Table '{key}' created.")),
+            Query::DeleteTable { key } => Ok(format!("Table '{key}' dropped.")),
+            Query::Insert { table } => Ok(format!("1 row inserted into '{table}'.")),
+            Query::Update { table, count } => Ok(format!("{count} row(s) updated in '{table}'.")),
+            Query::DeleteRows { table, count } => {
+                Ok(format!("{count} row(s) deleted from '{table}'."))
+            }
+            Query::Select { columns, rows } => {
+                let mut out = columns.join("\t");
+                for row in &rows {
+                    out.push('\n');
+                    out.push_str(&row.join("\t"));
+                }
+                out.push_str(&format!("\n({} row(s))", rows.len()));
+                Ok(out)
+            }
         }
     }
 }
