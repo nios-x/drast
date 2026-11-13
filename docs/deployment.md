@@ -69,6 +69,14 @@ Running `cargo run` from the project folder creates `dbfiles/` inside the projec
 | Environment variable | Default | Description |
 |---|---|---|
 | `DRAST_ADDR` | `127.0.0.1:3495` | The `host:port` to listen on |
+| `DRAST_CORS_ORIGINS` | *(none)* | Extra browser origins allowed to call the API, comma-separated. `localhost` / `127.0.0.1` / `[::1]` pages are always allowed; `*` allows all |
+
+To let a frontend hosted elsewhere (for example the playground deployed to Vercel) call your server:
+
+```bash
+DRAST_CORS_ORIGINS=https://my-app.vercel.app cargo run
+docker run -d -p 3495:3495 -e DRAST_CORS_ORIGINS=https://my-app.vercel.app -v drast-data:/app/dbfiles drast
+```
 
 | Value | Meaning |
 |---|---|

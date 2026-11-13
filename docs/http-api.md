@@ -81,6 +81,7 @@ The `response` text for each command:
 |---|---|
 | `CREATE TABLE t ...` | `Table 't' created.` |
 | `DROP TABLE t` | `Table 't' dropped.` |
+| `SHOW TABLES` | Tab-separated table of `table`, `columns`, `rows`, read like a `SELECT` result |
 | `INSERT INTO t ...` | `1 row inserted into 't'.` |
 | `SELECT ...` | Tab-separated table, see [Reading SELECT results](#reading-select-results) |
 | `UPDATE t ...` | `<n> row(s) updated in 't'.` |
@@ -125,7 +126,7 @@ The `415`, `422` and `413` responses, and the `400` for malformed JSON, come fro
 
 ## Reading SELECT results
 
-A `SELECT` returns its rows as one string inside `response`:
+A `SELECT` (and `SHOW TABLES`) returns its rows as one string inside `response`:
 
 ```json
 {"response":"id\tname\tage\n1\tSoumya Jaiswal\t20\n2\tRahul\t22\n3\tAmit\t\n(3 row(s))"}
@@ -245,7 +246,7 @@ await drast(`INSERT INTO notes VALUES (1, 'buy milk')`);
 console.log(await drast("SELECT * FROM notes"));
 ```
 
-> Calling DrastDB from a web page on another origin will be **blocked by the browser**, because the server sends no CORS headers. Call it from a backend instead, or add a CORS layer (for example `tower-http`'s `CorsLayer`) in `main.rs`.
+> Browsers only allow this from pages served on `localhost`, `127.0.0.1` or `[::1]` (any port), such as the playground's dev server. To call DrastDB from a page hosted elsewhere, start the server with that origin in `DRAST_CORS_ORIGINS` (see [Notes and limits](#notes-and-limits)).
 
 ### Python (requests)
 
@@ -270,7 +271,7 @@ print(drast("SELECT * FROM notes"))
 ## Notes and limits
 
 - **No authentication.** Anyone who can reach the port can read and change all data. The default address `127.0.0.1` accepts local connections only. Only listen on `0.0.0.0` on a trusted network.
-- **No CORS headers.** Browsers on other origins cannot call the API directly.
+- **CORS.** The server sends CORS headers for `GET` and `POST` with `Content-Type`. Pages on `localhost`, `127.0.0.1` and `[::1]` (any port) are always allowed. Add others with `DRAST_CORS_ORIGINS`, comma-separated (`DRAST_CORS_ORIGINS=https://my-app.vercel.app`), or allow every origin with `DRAST_CORS_ORIGINS=*`. Allowing every origin lets any website you visit read and change your data, so only do that on a server you don't mind exposing.
 - **Request size.** Bodies over 2 MB (axum's default limit) are rejected with `413`.
 - **Concurrency.** Requests are handled concurrently, but table writes are not locked. Two writes to the same table at the same moment can lose one of them. See [architecture.md](architecture.md#concurrency).
 - **Encoding.** Requests and responses are UTF-8.

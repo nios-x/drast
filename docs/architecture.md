@@ -36,6 +36,7 @@ src/
 ├── executor.rs   POST /query handler
 ├── parser.rs     tokenizer + parser + table storage
 ├── engine.rs     key/value store + response formatting
+├── cors.rs       CORS policy for browser clients
 ├── handlers.rs   GET / handler
 └── helpers.rs    startup banner
 ```
@@ -44,8 +45,12 @@ src/
 
 - Prints the startup message (`helpers::start()`).
 - Reads the listen address from `DRAST_ADDR`, falling back to `127.0.0.1:3495`.
-- Builds the axum `Router` with two routes, `GET /` → `handlers::root` and `POST /query` → `executor::query`, and attaches a shared `Engine` as router state.
+- Builds the axum `Router` with two routes, `GET /` → `handlers::root` and `POST /query` → `executor::query`, wraps it in the CORS layer from `cors.rs`, and attaches a shared `Engine` as router state.
 - Binds a `tokio::net::TcpListener` and serves.
+
+### `cors.rs`
+
+Builds a `tower_http::cors::CorsLayer` that allows `GET` and `POST` with a `Content-Type` header. Origins on `localhost`, `127.0.0.1` and `[::1]` (any port) are always allowed, so a local frontend like the playground works out of the box while other websites can't reach your data. `DRAST_CORS_ORIGINS` adds exact origins (comma-separated), or `*` allows all.
 
 ### `executor.rs`
 
@@ -131,6 +136,7 @@ pub enum Query {
     Select { columns: Vec<String>, rows: Vec<Vec<String>> },
     Update { table: String, count: usize },
     DeleteRows { table: String, count: usize },
+    ShowTables { tables: Vec<TableInfo> },   // TableInfo { name, columns, rows }
 }
 ```
 
@@ -148,6 +154,7 @@ The key/value variants describe an action for the engine to carry out. The table
 |---|---|
 | `CREATE` | `CREATE TABLE` |
 | `DROP` | `DROP TABLE` |
+| `SHOW` | `SHOW TABLES` (reads every `.db` file in `dbfiles/`) |
 | `INSERT` | `INSERT INTO` |
 | `SELECT` | `SELECT` |
 | `UPDATE` | `UPDATE` |
@@ -155,7 +162,7 @@ The key/value variants describe an action for the engine to carry out. The table
 | `SET` / `GET` / `DELETE` | key/value commands |
 | anything else | `Not a Valid Input` with a usage list |
 
-`DROP`, `SET`, `GET` and key/value `DELETE` work directly on the whitespace-split words. The other table commands use the tokenizer.
+`DROP`, `SHOW`, `SET`, `GET` and key/value `DELETE` work directly on the whitespace-split words. The other table commands use the tokenizer.
 
 ### Tokenizer
 
@@ -275,6 +282,6 @@ This is fine for one client at a time, which is the intended use. See below for 
 | Only `WHERE col = value` | Extend `where_clause` to parse `AND`/`OR` and `!=`, `<`, `>` (with numeric comparison when both sides parse as numbers) |
 | No `ORDER BY` / `LIMIT` | Parse them after `WHERE` and apply them to the filtered rows before formatting |
 | `SELECT` output must be split by clients | Return `{"columns": [...], "rows": [[...]]}` as JSON |
-| No auth or CORS | Add an API-key check as an axum middleware, and `tower-http`'s `CorsLayer` |
+| No authentication | Add an API-key check as an axum middleware |
 | `DELETE from` (a key named `from`) can't be deleted | Give the key/value commands their own prefix, such as `KV DELETE`, or check the word count before treating `DELETE FROM` as a table command |
 | Unused handlers in `handlers.rs` | Remove `query`, `memory`, `QueryRequest` and `QueryResponse` |

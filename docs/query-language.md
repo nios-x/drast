@@ -8,6 +8,7 @@ All examples show the query string you put in the `"query"` field of a `POST /qu
 - [Table commands](#table-commands)
   - [CREATE TABLE](#create-table)
   - [DROP TABLE](#drop-table)
+  - [SHOW TABLES](#show-tables)
   - [INSERT INTO](#insert-into)
   - [SELECT](#select)
   - [UPDATE](#update)
@@ -25,7 +26,7 @@ All examples show the query string you put in the `"query"` field of a `POST /qu
 
 ### Keywords
 
-Keywords are **case-insensitive**: `SELECT`, `select` and `SeLeCt` all work. This covers `CREATE`, `TABLE`, `DROP`, `INSERT`, `INTO`, `VALUES`, `SELECT`, `FROM`, `WHERE`, `UPDATE`, `SET`, `DELETE`, `GET`.
+Keywords are **case-insensitive**: `SELECT`, `select` and `SeLeCt` all work. This covers `CREATE`, `TABLE`, `DROP`, `SHOW`, `TABLES`, `INSERT`, `INTO`, `VALUES`, `SELECT`, `FROM`, `WHERE`, `UPDATE`, `SET`, `DELETE`, `GET`.
 
 ### No semicolons
 
@@ -141,6 +142,41 @@ DROP TABLE a b            →  400  Usage: DROP TABLE <table_name>
 ```
 
 > ⚠️ There is no undo. The table's file is deleted from disk.
+
+---
+
+### SHOW TABLES
+
+Lists every table, with its columns and how many rows it has.
+
+```
+SHOW TABLES
+```
+
+**Example**
+
+```
+SHOW TABLES
+→ 200
+table	columns	rows
+orders	id, item	0
+users	id, name, age	1
+(2 row(s))
+```
+
+**Rules**
+
+- Tables are listed in alphabetical order.
+- The response has the same shape as a `SELECT` result: a header line, one line per table, and a `(N row(s))` footer. The `columns` value is the column names joined with `, `.
+- With no tables (or no `dbfiles/` folder yet), you get only the header and `(0 row(s))`.
+- Files in `dbfiles/` that aren't valid tables (wrong extension, invalid name, empty file) are skipped.
+
+**Errors**
+
+```
+SHOW TABLE            →  400  Usage: SHOW TABLES
+SHOW TABLES users     →  400  Usage: SHOW TABLES
+```
 
 ---
 
@@ -438,6 +474,7 @@ Every error returns HTTP **400 Bad Request** with the message as a plain-text bo
 | Message | Cause |
 |---|---|
 | `Usage: DROP TABLE <table_name>` | `DROP` without exactly `DROP TABLE <name>`. |
+| `Usage: SHOW TABLES` | `SHOW` followed by anything other than `TABLES`. |
 | `Usage: SET <key> <value>` | `SET` without a key and a value. |
 | `Usage: GET <key>` | `GET` without exactly one key. |
 | `Usage: DELETE <key>` | `DELETE` without exactly one key (and not `DELETE FROM`). |

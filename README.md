@@ -20,6 +20,7 @@ curl -X POST http://127.0.0.1:3495/query \
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Your first queries](#your-first-queries)
+- [Web playground](#web-playground)
 - [Command cheat sheet](#command-cheat-sheet)
 - [HTTP API at a glance](#http-api-at-a-glance)
 - [Configuration](#configuration)
@@ -33,7 +34,8 @@ curl -X POST http://127.0.0.1:3495/query \
 
 ## Features
 
-- **SQL-like tables**: `CREATE TABLE`, `DROP TABLE`, `INSERT`, `SELECT`, `UPDATE` and `DELETE FROM`, with an optional `WHERE col = value` filter.
+- **SQL-like tables**: `CREATE TABLE`, `DROP TABLE`, `SHOW TABLES`, `INSERT`, `SELECT`, `UPDATE` and `DELETE FROM`, with an optional `WHERE col = value` filter.
+- **Web playground**: a browser UI in [`frontend/`](frontend/) for writing queries, browsing tables, and checking history.
 - **Key/value store**: `SET`, `GET` and `DELETE` keep values in memory. It is fast, but the data is lost when the server restarts.
 - **HTTP API**: a single `POST /query` endpoint that takes and returns JSON.
 - **Human-readable storage**: each table is one tab-separated text file in `./dbfiles/`.
@@ -178,6 +180,20 @@ id      name            age
 
 ---
 
+## Web playground
+
+The [`frontend/`](frontend/) folder contains **DrastDB Playground**, a black-themed browser UI for the database. With the server running, start it with [Node.js](https://nodejs.org) 20.19 or newer:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**. Each line in the editor is one query: press `Ctrl+Enter` (`⌘+Enter` on macOS) to run the line under the cursor, or `Ctrl+Shift+Enter` to run every line. The sidebar lists your tables, has a form for the key/value store, and keeps a history of everything you've run. See [frontend/README.md](frontend/README.md) for details.
+
+---
+
 ## Command cheat sheet
 
 Keywords are case-insensitive: `select`, `SELECT` and `Select` all work. Do **not** end queries with a semicolon.
@@ -188,6 +204,7 @@ Keywords are case-insensitive: `select`, `SELECT` and `Select` all work. Do **no
 |---|---|---|
 | Create a table | `CREATE TABLE users (id, name, age)` | `Table 'users' created.` |
 | Delete a table | `DROP TABLE users` | `Table 'users' dropped.` |
+| List tables | `SHOW TABLES` | each table with its columns and row count |
 | Insert a full row | `INSERT INTO users VALUES (1, 'Soumya', 20)` | `1 row inserted into 'users'.` |
 | Insert some columns | `INSERT INTO users (id, name) VALUES (3, 'Amit')` | `1 row inserted into 'users'.` |
 | Select all columns | `SELECT * FROM users` | header, rows, `(N row(s))` |
@@ -233,6 +250,7 @@ Status codes, response formats and client examples in curl, PowerShell, JavaScri
 | Environment variable | Default | Description |
 |---|---|---|
 | `DRAST_ADDR` | `127.0.0.1:3495` | The address and port the server listens on. Use `0.0.0.0:<port>` to accept connections from other machines or from outside a container. |
+| `DRAST_CORS_ORIGINS` | *(none)* | Extra web origins allowed to call the API from a browser, comma-separated, e.g. `https://my-app.vercel.app`. Pages on `localhost` / `127.0.0.1` are always allowed. `*` allows every origin. |
 
 ```bash
 DRAST_ADDR=0.0.0.0:8080 cargo run        # bash
@@ -268,7 +286,7 @@ More detail is in [docs/architecture.md](docs/architecture.md).
 
 ```
 drast/
-├── Cargo.toml          # Package manifest (axum, tokio, serde)
+├── Cargo.toml          # Package manifest (axum, tokio, serde, tower-http)
 ├── Dockerfile          # Multi-stage Docker build
 ├── .dockerignore
 ├── README.md
@@ -277,11 +295,13 @@ drast/
 │   ├── http-api.md
 │   ├── architecture.md
 │   └── deployment.md
+├── frontend/           # DrastDB Playground (React + Vite web UI)
 └── src/
     ├── main.rs         # Entry point: reads DRAST_ADDR, builds the router, starts the server
     ├── executor.rs     # POST /query handler: parse → execute → JSON response
     ├── parser.rs       # Tokenizer, query parser, and table storage (reads/writes dbfiles/)
     ├── engine.rs       # In-memory key/value store and response formatting
+    ├── cors.rs         # Which browser origins may call the API
     ├── handlers.rs     # GET / handler
     └── helpers.rs      # Startup message
 ```
@@ -309,7 +329,7 @@ DrastDB is deliberately simple. Before you rely on it, know that:
 - **Concurrent writes to the same table can lose updates.** Each write reads the whole file, changes it and writes it back without a lock.
 - **Every table query reads the whole file.** Performance drops as tables grow.
 - **The key/value store is not saved.** It is lost on restart.
-- **There is no authentication or CORS.** Anyone who can reach the port can read and change data, and browsers on other origins cannot call the API.
+- **There is no authentication.** Anyone who can reach the port can read and change data. Browsers can only call the API from `localhost` pages unless you allow more origins with `DRAST_CORS_ORIGINS`.
 
 [docs/architecture.md](docs/architecture.md#limitations-and-ideas-for-improvement) lists ideas for removing these limits.
 
@@ -332,3 +352,4 @@ cargo clippy             # lint
 | `axum` 0.8 | HTTP routing and JSON extraction |
 | `tokio` 1 (full) | Async runtime, TCP listener, async file I/O |
 | `serde` 1 (derive) | JSON request/response (de)serialization |
+| `tower-http` 0.7 (cors) | CORS headers for browser clients such as the playground |
