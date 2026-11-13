@@ -37,6 +37,7 @@ src/
 ├── parser.rs     tokenizer + parser + table storage
 ├── engine.rs     key/value store + response formatting
 ├── cors.rs       CORS policy for browser clients
+├── playground.rs serves the built web playground at /playground/
 ├── handlers.rs   GET / handler
 └── helpers.rs    startup banner
 ```
@@ -45,7 +46,7 @@ src/
 
 - Prints the startup message (`helpers::start()`).
 - Reads the listen address from `DRAST_ADDR`, falling back to `127.0.0.1:3495`.
-- Builds the axum `Router` with two routes, `GET /` → `handlers::root` and `POST /query` → `executor::query`, wraps it in the CORS layer from `cors.rs`, and attaches a shared `Engine` as router state.
+- Builds the axum `Router` with two routes, `GET /` → `handlers::root` and `POST /query` → `executor::query`, merges in the `/playground` routes from `playground.rs`, wraps it all in the CORS layer from `cors.rs`, and attaches a shared `Engine` as router state.
 - Binds a `tokio::net::TcpListener` and serves.
 
 ### `cors.rs`
@@ -74,6 +75,15 @@ The biggest module. It contains:
 
 - **`Engine`**: holds the key/value store as `Arc<RwLock<HashMap<String, String>>>`. It derives `Clone`, and cloning shares the same map. axum clones the state for each request, so every request sees the same store.
 - **`Engine::execute`**: runs `SET`/`GET`/`DELETE` against the map and turns table results into response text, including the tab-separated `SELECT` output.
+
+### `playground.rs`
+
+Serves the React app from `frontend/` as static files. At startup it reads `DRAST_PLAYGROUND_DIR` (default `frontend/dist`, relative to the working directory) and checks for an `index.html` there:
+
+- If it exists, `/playground/` and everything below it is served from that folder with `tower_http::services::ServeDir`. `ServeDir` rejects paths that try to leave the folder, such as `/playground/../Cargo.toml`.
+- If it doesn't, `/playground/` returns `404` with instructions for building the playground.
+
+`/playground` (no trailing slash) redirects to `/playground/`, because the build uses relative asset URLs (`./assets/...`) that only resolve correctly under the trailing slash. A line on startup reports which case applies.
 
 ### `handlers.rs`
 

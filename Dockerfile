@@ -1,3 +1,14 @@
+# ---------- Playground build stage ----------
+FROM node:22-bookworm-slim AS playground
+WORKDIR /frontend
+
+# Install dependencies first so they are cached between code changes.
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend ./
+RUN npm run build
+
 # ---------- Build stage ----------
 FROM rust:1.96-slim-bookworm AS builder
 WORKDIR /app
@@ -22,9 +33,12 @@ RUN useradd --system --no-create-home drast \
     && chown drast:drast /app/dbfiles
 
 COPY --from=builder /app/target/release/drast /usr/local/bin/drast
+# The web playground, served at /playground/.
+COPY --from=playground /frontend/dist /app/playground
 
 USER drast
 ENV DRAST_ADDR=0.0.0.0:3495
+ENV DRAST_PLAYGROUND_DIR=/app/playground
 EXPOSE 3495
 VOLUME ["/app/dbfiles"]
 

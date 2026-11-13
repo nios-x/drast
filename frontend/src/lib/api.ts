@@ -11,8 +11,14 @@ export type TableData = { columns: string[]; rows: string[][] }
 
 export type TableInfo = { name: string; columns: string[]; rows: number }
 
+/**
+ * `VITE_DRAST_URL` if set. Otherwise the dev server talks to a local DrastDB,
+ * and a build talks to the server it was loaded from (DrastDB serves the build
+ * at /playground/).
+ */
 export const DEFAULT_URL: string =
-  (import.meta.env.VITE_DRAST_URL as string | undefined) ?? 'http://127.0.0.1:3495'
+  (import.meta.env.VITE_DRAST_URL as string | undefined) ??
+  (import.meta.env.DEV ? 'http://127.0.0.1:3495' : window.location.origin)
 
 export function normalizeUrl(url: string): string {
   return url.trim().replace(/\/+$/, '')

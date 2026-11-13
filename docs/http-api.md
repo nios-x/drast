@@ -1,11 +1,13 @@
 # HTTP API Reference
 
-DrastDB is used entirely over HTTP. It has two endpoints.
+DrastDB is used entirely over HTTP. It has two API endpoints.
 
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/` | Health/info check |
 | `POST` | `/query` | Run any query |
+
+The server also serves the web playground, a browser UI, at `GET /playground/`. It is a web page, not part of the API (see the [README](../README.md#web-playground)).
 
 The base URL is `http://127.0.0.1:3495` by default. It can be changed with the `DRAST_ADDR` environment variable (see [deployment.md](deployment.md#configuration)).
 

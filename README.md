@@ -35,7 +35,7 @@ curl -X POST http://127.0.0.1:3495/query \
 ## Features
 
 - **SQL-like tables**: `CREATE TABLE`, `DROP TABLE`, `SHOW TABLES`, `INSERT`, `SELECT`, `UPDATE` and `DELETE FROM`, with an optional `WHERE col = value` filter.
-- **Web playground**: a browser UI in [`frontend/`](frontend/) for writing queries, browsing tables, and checking history.
+- **Web playground**: a browser UI for writing queries, browsing tables, and checking history, served by the server itself at `/playground/`.
 - **Key/value store**: `SET`, `GET` and `DELETE` keep values in memory. It is fast, but the data is lost when the server restarts.
 - **HTTP API**: a single `POST /query` endpoint that takes and returns JSON.
 - **Human-readable storage**: each table is one tab-separated text file in `./dbfiles/`.
@@ -74,7 +74,7 @@ DrastDB is a Simple Mini DB made in Rust.
 API Server is Running...
 ```
 
-Then jump to [Your first queries](#your-first-queries).
+Open **http://127.0.0.1:3495/playground/** in your browser to use the [web playground](#web-playground), or jump to [Your first queries](#your-first-queries) to use curl.
 
 Useful commands:
 
@@ -103,7 +103,10 @@ You should see:
 
 ```
 DrastDB is running...
+Playground: not built (frontend/dist has no index.html), see /playground/
 ```
+
+The second line says whether the [web playground](#web-playground) is available. To build it, see that section.
 
 The server is now listening on **http://127.0.0.1:3495**. To check it:
 
@@ -182,15 +185,23 @@ id      name            age
 
 ## Web playground
 
-The [`frontend/`](frontend/) folder contains **DrastDB Playground**, a black-themed browser UI for the database. With the server running, start it with [Node.js](https://nodejs.org) 20.19 or newer:
+**DrastDB Playground** is a black-themed browser UI for the database. Its code is in [`frontend/`](frontend/), and the server serves it at **`/playground/`**, for example **http://127.0.0.1:3495/playground/**. It talks to the server it was loaded from, so there is nothing to configure.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+- **Docker image:** the playground is already included. Open `/playground/` after `docker run`.
+- **`cargo run`:** build the playground once with [Node.js](https://nodejs.org) 20.19 or newer, then start the server from the repository root:
 
-Open **http://localhost:5173**. Each line in the editor is one query: press `Ctrl+Enter` (`⌘+Enter` on macOS) to run the line under the cursor, or `Ctrl+Shift+Enter` to run every line. The sidebar lists your tables, has a form for the key/value store, and keeps a history of everything you've run. See [frontend/README.md](frontend/README.md) for details.
+  ```bash
+  cd frontend
+  npm install
+  npm run build
+  cd ..
+  cargo run
+  ```
+
+  The server reads the built files from `frontend/dist`. Set `DRAST_PLAYGROUND_DIR` to use another folder.
+- **Working on the playground itself:** run `npm run dev` in `frontend/` and open **http://localhost:5173** for hot reload.
+
+Each line in the editor is one query: press `Ctrl+Enter` (`⌘+Enter` on macOS) to run the line under the cursor, or `Ctrl+Shift+Enter` to run every line. The sidebar lists your tables, has a form for the key/value store, and keeps a history of everything you've run. See [frontend/README.md](frontend/README.md) for details.
 
 ---
 
@@ -234,6 +245,7 @@ The full syntax, rules and every error message are in **[docs/query-language.md]
 |---|---|---|---|
 | `GET` | `/` | none | `200`, plain-text banner |
 | `POST` | `/query` | `{"query": "..."}` (JSON) | `200` `{"response": "..."}` on success, `400` plain-text error on failure |
+| `GET` | `/playground/` | none | The [web playground](#web-playground) (`/playground` redirects here) |
 
 ```
 POST /query  {"query": "SELECT * FROM missing"}
@@ -251,6 +263,7 @@ Status codes, response formats and client examples in curl, PowerShell, JavaScri
 |---|---|---|
 | `DRAST_ADDR` | `127.0.0.1:3495` | The address and port the server listens on. Use `0.0.0.0:<port>` to accept connections from other machines or from outside a container. |
 | `DRAST_CORS_ORIGINS` | *(none)* | Extra web origins allowed to call the API from a browser, comma-separated, e.g. `https://my-app.vercel.app`. Pages on `localhost` / `127.0.0.1` are always allowed. `*` allows every origin. |
+| `DRAST_PLAYGROUND_DIR` | `frontend/dist` (`/app/playground` in Docker) | The folder holding the built [web playground](#web-playground), served at `/playground/`. A relative path is relative to the directory you start the server from. |
 
 ```bash
 DRAST_ADDR=0.0.0.0:8080 cargo run        # bash
@@ -287,7 +300,7 @@ More detail is in [docs/architecture.md](docs/architecture.md).
 ```
 drast/
 ├── Cargo.toml          # Package manifest (axum, tokio, serde, tower-http)
-├── Dockerfile          # Multi-stage Docker build
+├── Dockerfile          # Multi-stage Docker build (playground + server)
 ├── .dockerignore
 ├── README.md
 ├── docs/               # Detailed documentation
@@ -302,6 +315,7 @@ drast/
     ├── parser.rs       # Tokenizer, query parser, and table storage (reads/writes dbfiles/)
     ├── engine.rs       # In-memory key/value store and response formatting
     ├── cors.rs         # Which browser origins may call the API
+    ├── playground.rs   # Serves the built playground at /playground/
     ├── handlers.rs     # GET / handler
     └── helpers.rs      # Startup message
 ```
@@ -352,4 +366,4 @@ cargo clippy             # lint
 | `axum` 0.8 | HTTP routing and JSON extraction |
 | `tokio` 1 (full) | Async runtime, TCP listener, async file I/O |
 | `serde` 1 (derive) | JSON request/response (de)serialization |
-| `tower-http` 0.7 (cors) | CORS headers for browser clients such as the playground |
+| `tower-http` 0.7 (cors, fs) | CORS headers for browser clients, and serving the playground's static files |

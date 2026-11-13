@@ -70,6 +70,7 @@ Running `cargo run` from the project folder creates `dbfiles/` inside the projec
 |---|---|---|
 | `DRAST_ADDR` | `127.0.0.1:3495` | The `host:port` to listen on |
 | `DRAST_CORS_ORIGINS` | *(none)* | Extra browser origins allowed to call the API, comma-separated. `localhost` / `127.0.0.1` / `[::1]` pages are always allowed; `*` allows all |
+| `DRAST_PLAYGROUND_DIR` | `frontend/dist` (`/app/playground` in the Docker image) | Folder with the built web playground, served at `/playground/`. Relative paths are relative to the working directory |
 
 To let a frontend hosted elsewhere (for example the playground deployed to Vercel) call your server:
 
@@ -111,18 +112,22 @@ cargo run
 
 ### What the Dockerfile does
 
-The [`Dockerfile`](../Dockerfile) has two stages.
+The [`Dockerfile`](../Dockerfile) has three stages.
 
-1. **Build stage** (`rust:1.96-slim-bookworm`)
+1. **Playground stage** (`node:22-bookworm-slim`)
+   - Copies `frontend/package.json` and `package-lock.json` and runs `npm ci` first, so the dependency layer is cached.
+   - Copies the rest of `frontend/` and runs `npm run build`, producing the static site in `dist/`.
+2. **Build stage** (`rust:1.96-slim-bookworm`)
    - Copies `Cargo.toml` and `Cargo.lock` and builds the dependencies alone first. This layer is cached, so later builds after code changes take seconds instead of minutes.
    - Copies `src/` and builds the release binary with `--locked`, using the exact versions in `Cargo.lock`.
-2. **Runtime stage** (`debian:bookworm-slim`)
-   - Contains only the compiled binary at `/usr/local/bin/drast`, without the Rust toolchain.
+3. **Runtime stage** (`debian:bookworm-slim`)
+   - Contains only the compiled binary at `/usr/local/bin/drast` and the built playground at `/app/playground`, without the Rust or Node toolchains.
+   - Sets `DRAST_PLAYGROUND_DIR=/app/playground`, so the playground is served at `/playground/`.
    - Creates an unprivileged `drast` user and runs as that user.
    - Sets `WORKDIR /app`, so tables live in `/app/dbfiles`, which is declared as a `VOLUME`.
    - Sets `DRAST_ADDR=0.0.0.0:3495` and `EXPOSE 3495`.
 
-[`.dockerignore`](../.dockerignore) keeps `target/`, `dbfiles/` and `.git` out of the build context, so builds stay fast and your local data never ends up in the image.
+[`.dockerignore`](../.dockerignore) keeps `target/`, `dbfiles/`, `.git`, `node_modules/` and `frontend/dist/` out of the build context, so builds stay fast and your local data never ends up in the image.
 
 ### Build
 
@@ -130,7 +135,7 @@ The [`Dockerfile`](../Dockerfile) has two stages.
 docker build -t drast .
 ```
 
-The first build downloads the Rust image (about 300 MB) and compiles all dependencies, which takes a few minutes. Later builds reuse the cache.
+The first build downloads the Rust and Node images, compiles all Rust dependencies and installs the npm packages, which takes a few minutes. Later builds reuse the cache.
 
 ### Run
 
@@ -150,6 +155,8 @@ Check it:
 ```bash
 curl http://127.0.0.1:3495/
 ```
+
+The web playground is at **http://127.0.0.1:3495/playground/**.
 
 ### Everyday commands
 

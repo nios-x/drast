@@ -6,6 +6,20 @@ Built with React 19, TypeScript and Vite, in a black theme using the Geist fonts
 
 ## Run it
 
+The easiest way is to let DrastDB serve it. The Docker image already includes the playground:
+
+```bash
+docker run -d --name drast -p 3495:3495 -v drast-data:/app/dbfiles soumya7708/drast
+```
+
+Then open **http://127.0.0.1:3495/playground/**.
+
+To serve your own build with `cargo run`, run `npm install` and `npm run build` in this folder, then start `cargo run` from the repository root. The server serves `frontend/dist` at `/playground/` (change the folder with `DRAST_PLAYGROUND_DIR`).
+
+### Development mode
+
+For hot reload while you work on the playground:
+
 1. Start DrastDB (from the repository root):
 
    ```bash
@@ -50,7 +64,7 @@ Notes on the editor:
 
 | Setting | Default | How to change |
 |---|---|---|
-| Server URL | `http://127.0.0.1:3495` | Click the status pill in the app, or set `VITE_DRAST_URL` before `npm run dev` / `npm run build` |
+| Server URL | In `npm run dev`: `http://127.0.0.1:3495`. In a build: the address the page was loaded from, so a playground served at `/playground/` talks to that same server. | Click the status pill in the app, or set `VITE_DRAST_URL` before `npm run dev` / `npm run build` |
 
 ```bash
 VITE_DRAST_URL=http://127.0.0.1:8080 npm run dev
@@ -58,7 +72,15 @@ VITE_DRAST_URL=http://127.0.0.1:8080 npm run dev
 
 ## Hosting it elsewhere
 
-`npm run build` writes a static site to `dist/`, which you can host anywhere (Vercel, Netlify, any static server). The server then has to allow that site's address:
+`npm run build` writes a static site to `dist/`. Asset paths are relative, so the same build works at DrastDB's `/playground/` and at the root of any static host (Vercel, Netlify, any static server).
+
+When you host it somewhere other than DrastDB, build it with the server's address, because a build otherwise talks to the address it was loaded from:
+
+```bash
+VITE_DRAST_URL=https://my-drast-server.example.com npm run build
+```
+
+The server then has to allow that site's address:
 
 ```bash
 DRAST_CORS_ORIGINS=https://my-playground.vercel.app cargo run
@@ -71,8 +93,8 @@ DrastDB has no authentication, so only point a hosted playground at a server you
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server with hot reload on port 5173 |
-| `npm run build` | Type-check and build to `dist/` |
-| `npm run preview` | Serve the built `dist/` locally |
+| `npm run build` | Type-check and build to `dist/` (served by DrastDB at `/playground/`) |
+| `npm run preview` | Serve the built `dist/` locally. Set the server URL with the status pill, since the page's own address isn't DrastDB. |
 | `npm run lint` | Lint with oxlint |
 
 ## Code map
